@@ -42,6 +42,9 @@
           <option>Science Fiction</option>
           <option>Biography</option>
         </select>
+        <div class="invalid-feedback">
+          Please select a genre before adding the book.
+        </div>
       </div>
 
       <div class="mb-3">
@@ -80,6 +83,7 @@
     const bookForm = document.getElementById('book-form');
     const bookList = document.getElementById('book-list');
     const stars = document.querySelectorAll('.star-rating i');
+    const genre = document.getElementById('genre');
     let selectedRating = 0;
 
     // Handle Star Rating
@@ -101,16 +105,24 @@
     bookForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('bookTitle').value;
-      const genre = document.getElementById('genre').value;
+      const genreSelect = document.getElementById('genre');
       const status = document.getElementById('status').value;
 
-      // Create book card
+      // ======= VALIDATION: Check if genre is selected =======
+      if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
+        genreSelect.classList.add('is-invalid'); // Add Bootstrap invalid class
+        return; // Stop submission
+      } else {
+        genreSelect.classList.remove('is-invalid'); // Remove invalid class if valid
+      }
+
+      // ======= Create Book Card =======
       const bookCard = document.createElement('div');
       bookCard.className = 'card book-card';
       bookCard.innerHTML = `
         <div class="card-body">
           <h5 class="card-title">${title}</h5>
-          <p class="card-text"><strong>Genre:</strong> ${genre}</p>
+          <p class="card-text"><strong>Genre:</strong> ${genreSelect.value}</p>
           <p class="card-text"><strong>Rating:</strong> ${'⭐'.repeat(selectedRating) || 'No rating'}</p>
           <p class="card-text"><strong>Status:</strong> ${status}</p>
           <button class="btn btn-sm btn-danger delete-btn">Delete</button>
@@ -118,11 +130,12 @@
       `;
       bookList.appendChild(bookCard);
 
-      // Clear form
+      // ======= Clear form =======
       bookForm.reset();
       selectedRating = 0;
       stars.forEach(s => s.classList.remove('fa-solid'));
       stars.forEach(s => s.classList.add('fa-regular'));
+      genreSelect.classList.remove('is-invalid'); // Remove error after reset
     });
 
     // Delete Book
