@@ -66,6 +66,9 @@
           <option>In Progress</option>
           <option>Done</option>
         </select>
+        <div class="invalid-feedback">
+          Please select a status before adding the book.
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary">Add Book</button>
@@ -83,7 +86,8 @@
     const bookForm = document.getElementById('book-form');
     const bookList = document.getElementById('book-list');
     const stars = document.querySelectorAll('.star-rating i');
-    const genre = document.getElementById('genre');
+    const genreSelect = document.getElementById('genre');
+    const statusSelect = document.getElementById('status');
     let selectedRating = 0;
 
     // Handle Star Rating
@@ -105,16 +109,26 @@
     bookForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('bookTitle').value;
-      const genreSelect = document.getElementById('genre');
-      const status = document.getElementById('status').value;
 
       // ======= VALIDATION: Check if genre is selected =======
+      let valid = true;
+
       if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
-        genreSelect.classList.add('is-invalid'); // Add Bootstrap invalid class
-        return; // Stop submission
+        genreSelect.classList.add('is-invalid');
+        valid = false;
       } else {
-        genreSelect.classList.remove('is-invalid'); // Remove invalid class if valid
+        genreSelect.classList.remove('is-invalid');
       }
+
+      // ======= VALIDATION: Check if status is selected =======
+      if (statusSelect.value === "Select Status" || statusSelect.selectedIndex === 0) {
+        statusSelect.classList.add('is-invalid');
+        valid = false;
+      } else {
+        statusSelect.classList.remove('is-invalid');
+      }
+
+      if (!valid) return; // Stop submission if invalid
 
       // ======= Create Book Card =======
       const bookCard = document.createElement('div');
@@ -124,7 +138,7 @@
           <h5 class="card-title">${title}</h5>
           <p class="card-text"><strong>Genre:</strong> ${genreSelect.value}</p>
           <p class="card-text"><strong>Rating:</strong> ${'⭐'.repeat(selectedRating) || 'No rating'}</p>
-          <p class="card-text"><strong>Status:</strong> ${status}</p>
+          <p class="card-text"><strong>Status:</strong> ${statusSelect.value}</p>
           <button class="btn btn-sm btn-danger delete-btn">Delete</button>
         </div>
       `;
@@ -135,7 +149,8 @@
       selectedRating = 0;
       stars.forEach(s => s.classList.remove('fa-solid'));
       stars.forEach(s => s.classList.add('fa-regular'));
-      genreSelect.classList.remove('is-invalid'); // Remove error after reset
+      genreSelect.classList.remove('is-invalid');
+      statusSelect.classList.remove('is-invalid');
     });
 
     // Delete Book
