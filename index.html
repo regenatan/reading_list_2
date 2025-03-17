@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book Tracker</title>
+  <title>Book Tracker Editable</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome for Stars -->
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary">Add Book</button>
+      <button type="submit" class="btn btn-primary" id="submit-btn">Add Book</button>
     </form>
 
     <!-- Display Book List -->
@@ -88,29 +88,35 @@
     const stars = document.querySelectorAll('.star-rating i');
     const genreSelect = document.getElementById('genre');
     const statusSelect = document.getElementById('status');
+    const submitBtn = document.getElementById('submit-btn');
     let selectedRating = 0;
+    let editMode = false;
+    let currentCard = null;
 
     // Handle Star Rating
     stars.forEach(star => {
       star.addEventListener('click', () => {
         selectedRating = star.dataset.value;
-        stars.forEach(s => {
-          s.classList.remove('fa-solid');
-          s.classList.add('fa-regular');
-        });
-        for (let i = 0; i < selectedRating; i++) {
-          stars[i].classList.remove('fa-regular');
-          stars[i].classList.add('fa-solid');
-        }
+        updateStarDisplay(selectedRating);
       });
     });
 
-    // Handle Form Submission
+    function updateStarDisplay(rating) {
+      stars.forEach(s => {
+        s.classList.remove('fa-solid');
+        s.classList.add('fa-regular');
+      });
+      for (let i = 0; i < rating; i++) {
+        stars[i].classList.remove('fa-regular');
+        stars[i].classList.add('fa-solid');
+      }
+    }
+
+    // Form Submission
     bookForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('bookTitle').value;
 
-      // ======= VALIDATION: Check if genre is selected =======
       let valid = true;
 
       if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
@@ -120,7 +126,6 @@
         genreSelect.classList.remove('is-invalid');
       }
 
-      // ======= VALIDATION: Check if status is selected =======
       if (statusSelect.value === "Select Status" || statusSelect.selectedIndex === 0) {
         statusSelect.classList.add('is-invalid');
         valid = false;
@@ -128,35 +133,65 @@
         statusSelect.classList.remove('is-invalid');
       }
 
-      if (!valid) return; // Stop submission if invalid
+      if (!valid) return;
 
-      // ======= Create Book Card =======
-      const bookCard = document.createElement('div');
-      bookCard.className = 'card book-card';
-      bookCard.innerHTML = `
-        <div class="card-body">
-          <h5 class="card-title">${title}</h5>
-          <p class="card-text"><strong>Genre:</strong> ${genreSelect.value}</p>
-          <p class="card-text"><strong>Rating:</strong> ${'⭐'.repeat(selectedRating) || 'No rating'}</p>
-          <p class="card-text"><strong>Status:</strong> ${statusSelect.value}</p>
-          <button class="btn btn-sm btn-danger delete-btn">Delete</button>
-        </div>
-      `;
-      bookList.appendChild(bookCard);
+      if (editMode) {
+        // ======= UPDATE EXISTING CARD =======
+        currentCard.querySelector('.card-title').textContent = title;
+        currentCard.querySelector('.genre').textContent = genreSelect.value;
+        currentCard.querySelector('.rating').textContent = '⭐'.repeat(selectedRating);
+        currentCard.querySelector('.status').textContent = statusSelect.value;
+        submitBtn.textContent = 'Add Book';
+        editMode = false;
+        currentCard = null;
+      } else {
+        // ======= ADD NEW CARD =======
+        const bookCard = document.createElement('div');
+        bookCard.className = 'card book-card';
+        bookCard.innerHTML = `
+          <div class="card-body">
+            <h5 class="card-title">${title}</h5>
+            <p class="card-text"><strong>Genre:</strong> <span class="genre">${genreSelect.value}</span></p>
+            <p class="card-text"><strong>Rating:</strong> <span class="rating">${'⭐'.repeat(selectedRating) || 'No rating'}</span></p>
+            <p class="card-text"><strong>Status:</strong> <span class="status">${statusSelect.value}</span></p>
+            <button class="btn btn-sm btn-secondary edit-btn">Edit</button>
+            <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+          </div>
+        `;
+        bookList.appendChild(bookCard);
+      }
 
       // ======= Clear form =======
       bookForm.reset();
       selectedRating = 0;
-      stars.forEach(s => s.classList.remove('fa-solid'));
-      stars.forEach(s => s.classList.add('fa-regular'));
+      updateStarDisplay(selectedRating);
       genreSelect.classList.remove('is-invalid');
       statusSelect.classList.remove('is-invalid');
     });
 
-    // Delete Book
+    // Edit/Delete Buttons
     bookList.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-btn')) {
         e.target.closest('.card').remove();
+      }
+      if (e.target.classList.contains('edit-btn')) {
+        const card = e.target.closest('.card');
+        const title = card.querySelector('.card-title').textContent;
+        const genre = card.querySelector('.genre').textContent;
+        const ratingStars = card.querySelector('.rating').textContent.length;
+        const status = card.querySelector('.status').textContent;
+
+        // Pre-fill form
+        document.getElementById('bookTitle').value = title;
+        genreSelect.value = genre;
+        statusSelect.value = status;
+        selectedRating = ratingStars;
+        updateStarDisplay(selectedRating);
+
+        // Change button
+        submitBtn.textContent = 'Update Book';
+        editMode = true;
+        currentCard = card;
       }
     });
   </script>
