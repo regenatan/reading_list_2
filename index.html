@@ -22,7 +22,7 @@
 <body class="bg-light">
 
   <div class="container py-5">
-    <h2 class="mb-4">📚 My Book Tracker</h2>
+    <h2 class="mb-4">Reading List</h2>
 
     <!-- Book Form -->
     <form id="book-form" class="border p-4 bg-white rounded">
@@ -83,6 +83,8 @@
   
   <!-- JavaScript -->
   <script>
+window.addEventListener("load", function (){
+
     const bookForm = document.getElementById('book-form');
     const bookList = document.getElementById('book-list');
     const stars = document.querySelectorAll('.star-rating i');
@@ -146,7 +148,7 @@
         currentCard = null;
       } else {
         // ======= ADD NEW CARD =======
-        const bookCard = document.createElement('div');
+        let bookCard = document.createElement('div');
         bookCard.className = 'card book-card';
         bookCard.innerHTML = `
           <div class="card-body">
@@ -194,6 +196,7 @@
         currentCard = card;
       }
     });
+})
   </script>
 </body>
 </html>
