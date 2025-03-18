@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,17 +9,19 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome for Stars -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <style>
     .star-rating i {
       color: gold;
       cursor: pointer;
     }
+
     .book-card {
       margin-top: 15px;
     }
   </style>
 </head>
+
 <body class="bg-light">
 
   <div class="container py-5">
@@ -80,77 +83,126 @@
 
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
+
   <!-- JavaScript -->
   <script>
-window.addEventListener("load", function (){
 
-    const bookForm = document.getElementById('book-form');
-    const bookList = document.getElementById('book-list');
-    const stars = document.querySelectorAll('.star-rating i');
-    const genreSelect = document.getElementById('genre');
-    const statusSelect = document.getElementById('status');
-    const submitBtn = document.getElementById('submit-btn');
-    let selectedRating = 0;
-    let editMode = false;
-    let currentCard = null;
+    let JSONBIN_ACCESS_KEY =
+      "$2a$10$hS9x8ZYP3omGDR63CSjAEue5sqAX2CNSUtz5dBm2cAP9.YmX0Yg6i";
 
-    // Handle Star Rating
-    stars.forEach(star => {
-      star.addEventListener('click', () => {
-        selectedRating = star.dataset.value;
-        updateStarDisplay(selectedRating);
+    window.addEventListener("load", function () {
+      const bookForm = document.getElementById('book-form');
+      const bookList = document.getElementById('book-list');
+      const stars = document.querySelectorAll('.star-rating i');
+      const genreSelect = document.getElementById('genre');
+      const statusSelect = document.getElementById('status');
+      const submitBtn = document.getElementById('submit-btn');
+      let selectedRating = 0;
+      let editMode = false;
+      let currentCard = null;
+
+      const JSONBIN_ROOT_URL = "https://api.jsonbin.io/v3";
+      const BIN_ID = "67d188598960c979a5702143";
+
+      function GET_SPECIFIC_BIN_URL(binId) {
+        return JSONBIN_ROOT_URL + "/b/" + binId;
+      }
+
+      function updateGlobalId() {
+        for (let i = 0; i < trips.length; i++) {
+          let currentId = trips[i].id;
+          if (currentId >= globalId) {
+            globalId = currentId + 1;
+            // This ensures that the globalId is always the biggest
+            // No trip id is equal or bigger than the globalId
+            // New trips will have a unique Id
+          }
+        }
+      }
+
+      async function importFromJSONBIN() {
+        let dataFromJSONBIN = await fetch(GET_SPECIFIC_BIN_URL(BIN_ID));
+        dataFromJSONBIN = await dataFromJSONBIN.json();
+        tripsFromJSONBIN = dataFromJSONBIN.record.trips;
+        trips = tripsFromJSONBIN;
+        updateGlobalId()
+        displayTrips();
+      }
+
+      async function exportToJSONBIN() {
+        let dataFromJSONBIN = await fetch(GET_SPECIFIC_BIN_URL(BIN_ID), {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Access-Key": JSONBIN_ACCESS_KEY,
+          },
+          body: JSON.stringify({
+            trips: trips,
+          }),
+        });
+      }
+
+      importFromJSONBIN();
+
+
+
+
+      // Handle Star Rating
+      stars.forEach(star => {
+        star.addEventListener('click', () => {
+          selectedRating = star.dataset.value;
+          updateStarDisplay(selectedRating);
+        });
       });
-    });
 
-    function updateStarDisplay(rating) {
-      stars.forEach(s => {
-        s.classList.remove('fa-solid');
-        s.classList.add('fa-regular');
-      });
-      for (let i = 0; i < rating; i++) {
-        stars[i].classList.remove('fa-regular');
-        stars[i].classList.add('fa-solid');
-      }
-    }
-
-    // Form Submission
-    bookForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = document.getElementById('bookTitle').value;
-
-      let valid = true;
-
-      if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
-        genreSelect.classList.add('is-invalid');
-        valid = false;
-      } else {
-        genreSelect.classList.remove('is-invalid');
+      function updateStarDisplay(rating) {
+        stars.forEach(s => {
+          s.classList.remove('fa-solid');
+          s.classList.add('fa-regular');
+        });
+        for (let i = 0; i < rating; i++) {
+          stars[i].classList.remove('fa-regular');
+          stars[i].classList.add('fa-solid');
+        }
       }
 
-      if (statusSelect.value === "Select Status" || statusSelect.selectedIndex === 0) {
-        statusSelect.classList.add('is-invalid');
-        valid = false;
-      } else {
-        statusSelect.classList.remove('is-invalid');
-      }
+      // Form Submission
+      bookForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('bookTitle').value;
 
-      if (!valid) return;
+        let valid = true;
 
-      if (editMode) {
-        // ======= UPDATE EXISTING CARD =======
-        currentCard.querySelector('.card-title').textContent = title;
-        currentCard.querySelector('.genre').textContent = genreSelect.value;
-        currentCard.querySelector('.rating').textContent = '⭐'.repeat(selectedRating);
-        currentCard.querySelector('.status').textContent = statusSelect.value;
-        submitBtn.textContent = 'Add Book';
-        editMode = false;
-        currentCard = null;
-      } else {
-        // ======= ADD NEW CARD =======
-        let bookCard = document.createElement('div');
-        bookCard.className = 'card book-card';
-        bookCard.innerHTML = `
+        if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
+          genreSelect.classList.add('is-invalid');
+          valid = false;
+        } else {
+          genreSelect.classList.remove('is-invalid');
+        }
+
+        if (statusSelect.value === "Select Status" || statusSelect.selectedIndex === 0) {
+          statusSelect.classList.add('is-invalid');
+          valid = false;
+        } else {
+          statusSelect.classList.remove('is-invalid');
+        }
+
+        if (!valid) return;
+
+        if (editMode) {
+          // ======= UPDATE EXISTING CARD =======
+          currentCard.querySelector('.card-title').textContent = title;
+          currentCard.querySelector('.genre').textContent = genreSelect.value;
+          currentCard.querySelector('.rating').textContent = '⭐'.repeat(selectedRating);
+          currentCard.querySelector('.status').textContent = statusSelect.value;
+          submitBtn.textContent = 'Add Book';
+          editMode = false;
+          currentCard = null;
+        } else {
+          // ======= ADD NEW CARD =======
+          let bookCard = document.createElement('div');
+          bookCard.className = 'card book-card';
+          bookCard.innerHTML = `
           <div class="card-body">
             <h5 class="card-title">${title}</h5>
             <p class="card-text"><strong>Genre:</strong> <span class="genre">${genreSelect.value}</span></p>
@@ -160,43 +212,85 @@ window.addEventListener("load", function (){
             <button class="btn btn-sm btn-danger delete-btn">Delete</button>
           </div>
         `;
-        bookList.appendChild(bookCard);
-      }
+          bookList.appendChild(bookCard);
+        }
 
-      // ======= Clear form =======
-      bookForm.reset();
-      selectedRating = 0;
-      updateStarDisplay(selectedRating);
-      genreSelect.classList.remove('is-invalid');
-      statusSelect.classList.remove('is-invalid');
-    });
-
-    // Edit/Delete Buttons
-    bookList.addEventListener('click', (e) => {
-      if (e.target.classList.contains('delete-btn')) {
-        e.target.closest('.card').remove();
-      }
-      if (e.target.classList.contains('edit-btn')) {
-        const card = e.target.closest('.card');
-        const title = card.querySelector('.card-title').textContent;
-        const genre = card.querySelector('.genre').textContent;
-        const ratingStars = card.querySelector('.rating').textContent.length;
-        const status = card.querySelector('.status').textContent;
-
-        // Pre-fill form
-        document.getElementById('bookTitle').value = title;
-        genreSelect.value = genre;
-        statusSelect.value = status;
-        selectedRating = ratingStars;
+        // ======= Clear form =======
+        bookForm.reset();
+        selectedRating = 0;
         updateStarDisplay(selectedRating);
+        genreSelect.classList.remove('is-invalid');
+        statusSelect.classList.remove('is-invalid');
+      });
 
-        // Change button
-        submitBtn.textContent = 'Update Book';
-        editMode = true;
-        currentCard = card;
-      }
-    });
-})
+      // Edit/Delete Buttons
+      bookList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+          e.target.closest('.card').remove();
+        }
+        if (e.target.classList.contains('edit-btn')) {
+          const card = e.target.closest('.card');
+          const title = card.querySelector('.card-title').textContent;
+          const genre = card.querySelector('.genre').textContent;
+          const ratingStars = card.querySelector('.rating').textContent.length;
+          const status = card.querySelector('.status').textContent;
+
+          // Pre-fill form
+          document.getElementById('bookTitle').value = title;
+          genreSelect.value = genre;
+          statusSelect.value = status;
+          selectedRating = ratingStars;
+          updateStarDisplay(selectedRating);
+
+          // Change button
+          submitBtn.textContent = 'Update Book';
+          editMode = true;
+          currentCard = card;
+        }
+
+// Initialize the lists variable
+let lists = [];
+
+// Function to add user input to lists
+function addToList(input) {
+  lists.push(input);
+  saveLists();
+}
+
+// Save list to local storage
+function convertListsFromLocalStorage() {
+  let listsJSONstring = localStorage.getItem("book-list");
+
+  if (listsJSONstring == null) {
+    return []; // Early Exit
+  }
+
+  let listsArray = JSON.parse(listsJSONstring);
+  return listsArray;
+}
+
+// Load lists from local storage when the page loads
+function loadLists() {
+  lists = convertListsFromLocalStorage();
+}
+
+// Prepare lists array to be stored in local storage
+function prepareListsArray() {
+  let listsJSONstring = JSON.stringify(lists);
+  return listsJSONstring;
+}
+
+// Save the lists array to local storage
+function saveLists() {
+  localStorage.setItem("book-list", prepareListsArray());
+}
+
+// Load lists when the page loads
+loadLists();
+
+      });
+    })
   </script>
 </body>
+
 </html>
