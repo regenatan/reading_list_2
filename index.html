@@ -14,10 +14,13 @@
     <!-- Book Form -->
     <form id="book-form" class="mb-4">
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <input type="text" id="title" class="form-control" placeholder="Book Title" required />
         </div>
         <div class="col-md-3">
+          <input type="text" id="authors" class="form-control" placeholder="Author(s)" required />
+        </div>
+        <div class="col-md-2">
           <select id="genre" class="form-select" required>
             <option value="">Select Genre</option>
             <option>Fiction</option>
@@ -36,7 +39,7 @@
             <option value="5">⭐⭐⭐⭐⭐</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <select id="status" class="form-select" required>
             <option value="">Status</option>
             <option>Not Started</option>
@@ -55,7 +58,7 @@
   <script>
     // JSONBin Credentials
     const BIN_ID = '67d9013c8a456b7966782340';
-    const API_KEY = '$2a$10$GQHUNqJc/ln.5EdR9hDUD.GZMfBZ4aL2ceFjQfK6gMni71WRmAs3a';
+    const API_KEY = '$2a$10$GQHUNqJc/ln.5EdR9hDUD.GZMfBZ4aL2ceFjQfK6gMni71WRmAs3a'
 
     const bookForm = document.getElementById('book-form');
     const bookList = document.getElementById('book-list');
@@ -108,6 +111,7 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h5 class="card-title">${book.title}</h5>
+            <p class="card-text">Author(s): ${book.authors}</p>
             <p class="card-text">Genre: ${book.genre}</p>
             <p class="card-text">Rating: ${'⭐'.repeat(book.rating)}</p>
             <p class="card-text">Status: ${book.status}</p>
@@ -123,13 +127,14 @@
     bookForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('title').value.trim();
+      const authors = document.getElementById('authors').value.trim();
       const genre = document.getElementById('genre').value;
       const rating = parseInt(document.getElementById('rating').value);
       const status = document.getElementById('status').value;
 
       // Validation
-      if (!genre || !status) {
-        alert('Please select Genre and Status!');
+      if (!genre || !status || !authors) {
+        alert('Please fill all required fields: Authors, Genre, and Status!');
         return;
       }
 
@@ -137,7 +142,7 @@
         // Edit Mode
         books = books.map(book => 
           book.id === editBookId 
-          ? { ...book, title, genre, rating, status } 
+          ? { ...book, title, authors, genre, rating, status } 
           : book
         );
         editMode = false;
@@ -148,6 +153,7 @@
         const newBook = {
           id: Date.now().toString(),
           title,
+          authors,
           genre,
           rating,
           status
@@ -168,6 +174,7 @@
     window.editBook = (id) => {
       const book = books.find(b => b.id === id);
       document.getElementById('title').value = book.title;
+      document.getElementById('authors').value = book.authors;
       document.getElementById('genre').value = book.genre;
       document.getElementById('rating').value = book.rating;
       document.getElementById('status').value = book.status;
