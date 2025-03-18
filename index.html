@@ -3,248 +3,187 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book Tracker with JSONBin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .star-rating i { color: gold; cursor: pointer; }
-    .book-card { margin-top: 15px; }
-  </style>
+  <title>Book Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body class="bg-light">
 
-  <div class="container py-5">
-    <h2 class="mb-4">📚 My Book Tracker (JSONBin.io)</h2>
+  <div class="container my-5">
+    <h1 class="mb-4">📚 Book Tracker</h1>
 
     <!-- Book Form -->
-    <form id="book-form" class="border p-4 bg-white rounded">
-      <div class="mb-3">
-        <label for="bookTitle" class="form-label">Book Title:</label>
-        <input type="text" class="form-control" id="bookTitle" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="genre" class="form-label">Genre:</label>
-        <select class="form-select" id="genre" required>
-          <option selected disabled>Select Genre</option>
-          <option>Fiction</option>
-          <option>Non-Fiction</option>
-          <option>Mystery</option>
-          <option>Fantasy</option>
-          <option>Science Fiction</option>
-          <option>Biography</option>
-        </select>
-        <div class="invalid-feedback">
-          Please select a genre before adding the book.
+    <form id="book-form" class="mb-4">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <input type="text" id="title" class="form-control" placeholder="Book Title" required />
+        </div>
+        <div class="col-md-3">
+          <select id="genre" class="form-select" required>
+            <option value="">Select Genre</option>
+            <option>Fiction</option>
+            <option>Non-Fiction</option>
+            <option>Fantasy</option>
+            <option>Biography</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select id="rating" class="form-select" required>
+            <option value="">Rating</option>
+            <option value="1">⭐</option>
+            <option value="2">⭐⭐</option>
+            <option value="3">⭐⭐⭐</option>
+            <option value="4">⭐⭐⭐⭐</option>
+            <option value="5">⭐⭐⭐⭐⭐</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select id="status" class="form-select" required>
+            <option value="">Status</option>
+            <option>Not Started</option>
+            <option>In Progress</option>
+            <option>Done</option>
+          </select>
         </div>
       </div>
-
-      <div class="mb-3">
-        <label class="form-label">Rating:</label>
-        <div class="star-rating">
-          <i class="fa-regular fa-star" data-value="1"></i>
-          <i class="fa-regular fa-star" data-value="2"></i>
-          <i class="fa-regular fa-star" data-value="3"></i>
-          <i class="fa-regular fa-star" data-value="4"></i>
-          <i class="fa-regular fa-star" data-value="5"></i>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label for="status" class="form-label">Status:</label>
-        <select class="form-select" id="status" required>
-          <option selected disabled>Select Status</option>
-          <option>Not Started</option>
-          <option>In Progress</option>
-          <option>Done</option>
-        </select>
-        <div class="invalid-feedback">
-          Please select a status before adding the book.
-        </div>
-      </div>
-
-      <button type="submit" class="btn btn-primary" id="submit-btn">Add Book</button>
+      <button type="submit" class="btn btn-primary mt-3" id="submit-btn">Add Book</button>
     </form>
 
-    <!-- Book List -->
-    <div id="book-list" class="mt-4"></div>
+    <!-- Book Cards -->
+    <div id="book-list" class="row row-cols-1 row-cols-md-2 g-4"></div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
   <script>
-    const BIN_ID = '67d9013c8a456b7966782340 ';
+    // JSONBin Credentials
+    const BIN_ID = '67d9013c8a456b7966782340';
     const API_KEY = '$2a$10$GQHUNqJc/ln.5EdR9hDUD.GZMfBZ4aL2ceFjQfK6gMni71WRmAs3a';
-    const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     const bookForm = document.getElementById('book-form');
     const bookList = document.getElementById('book-list');
-    const stars = document.querySelectorAll('.star-rating i');
-    const genreSelect = document.getElementById('genre');
-    const statusSelect = document.getElementById('status');
     const submitBtn = document.getElementById('submit-btn');
 
-    let selectedRating = 0;
-    let editMode = false;
-    let currentCard = null;
     let books = [];
+    let editMode = false;
+    let editBookId = null;
 
-    // Handle Star Rating
-    stars.forEach(star => {
-      star.addEventListener('click', () => {
-        selectedRating = star.dataset.value;
-        updateStarDisplay(selectedRating);
-      });
+    // Load Books on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadBooksFromJSONBin();
     });
 
-    function updateStarDisplay(rating) {
-      stars.forEach(s => {
-        s.classList.remove('fa-solid');
-        s.classList.add('fa-regular');
-      });
-      for (let i = 0; i < rating; i++) {
-        stars[i].classList.remove('fa-regular');
-        stars[i].classList.add('fa-solid');
-      }
+    // Fetch Books from JSONBin
+    function loadBooksFromJSONBin() {
+      fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Access-Key': API_KEY
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          books = data.record || [];
+          bookList.innerHTML = '';
+          books.forEach(book => addBookCard(book));
+        })
+        .catch(error => console.error('Error fetching books:', error));
     }
 
-    // Load books from JSONBin
-    async function loadBooks() {
-      try {
-        const res = await fetch(JSONBIN_URL + '/latest', {
-          headers: {
-            'X-Access-Key': API_KEY
-          }
-        });
-        const data = await res.json();
-        books = data.record || [];
-        books.forEach(book => renderBookCard(book));
-      } catch (err) {
-        console.error('Error loading books:', err);
-      }
+    // Save to JSONBin
+    function saveBooksToJSONBin() {
+      fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Access-Key': API_KEY
+        },
+        body: JSON.stringify(books)
+      }).catch(error => console.error('Error saving books:', error));
     }
 
-    // Save books to JSONBin
-    async function saveBooks() {
-      try {
-        await fetch(JSONBIN_URL, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Access-Key': API_KEY
-          },
-          body: JSON.stringify(books)
-        });
-      } catch (err) {
-        console.error('Error saving books:', err);
-      }
-    }
-
-    // Render Book Card
-    function renderBookCard(book) {
-      const bookCard = document.createElement('div');
-      bookCard.className = 'card book-card';
-      bookCard.dataset.id = book.id;
-      bookCard.innerHTML = `
-        <div class="card-body">
-          <h5 class="card-title">${book.title}</h5>
-          <p class="card-text"><strong>Genre:</strong> <span class="genre">${book.genre}</span></p>
-          <p class="card-text"><strong>Rating:</strong> <span class="rating">${'⭐'.repeat(book.rating)}</span></p>
-          <p class="card-text"><strong>Status:</strong> <span class="status">${book.status}</span></p>
-          <button class="btn btn-sm btn-secondary edit-btn">Edit</button>
-          <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+    // Add Book Card to UI
+    function addBookCard(book) {
+      const card = document.createElement('div');
+      card.className = 'col';
+      card.innerHTML = `
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">${book.title}</h5>
+            <p class="card-text">Genre: ${book.genre}</p>
+            <p class="card-text">Rating: ${'⭐'.repeat(book.rating)}</p>
+            <p class="card-text">Status: ${book.status}</p>
+            <button class="btn btn-sm btn-secondary me-2" onclick="editBook('${book.id}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBook('${book.id}')">Delete</button>
+          </div>
         </div>
       `;
-      bookList.appendChild(bookCard);
+      bookList.appendChild(card);
     }
 
-    // Form Submission
-    bookForm.addEventListener('submit', async (e) => {
+    // Handle Form Submit
+    bookForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const title = document.getElementById('bookTitle').value.trim();
+      const title = document.getElementById('title').value.trim();
+      const genre = document.getElementById('genre').value;
+      const rating = parseInt(document.getElementById('rating').value);
+      const status = document.getElementById('status').value;
 
-      let valid = true;
-
-      if (genreSelect.value === "Select Genre" || genreSelect.selectedIndex === 0) {
-        genreSelect.classList.add('is-invalid');
-        valid = false;
-      } else {
-        genreSelect.classList.remove('is-invalid');
+      // Validation
+      if (!genre || !status) {
+        alert('Please select Genre and Status!');
+        return;
       }
-
-      if (statusSelect.value === "Select Status" || statusSelect.selectedIndex === 0) {
-        statusSelect.classList.add('is-invalid');
-        valid = false;
-      } else {
-        statusSelect.classList.remove('is-invalid');
-      }
-
-      if (!valid) return;
 
       if (editMode) {
-        // Update existing book
-        const id = currentCard.dataset.id;
-        const book = books.find(b => b.id === id);
-        book.title = title;
-        book.genre = genreSelect.value;
-        book.rating = selectedRating;
-        book.status = statusSelect.value;
-
-        currentCard.querySelector('.card-title').textContent = title;
-        currentCard.querySelector('.genre').textContent = genreSelect.value;
-        currentCard.querySelector('.rating').textContent = '⭐'.repeat(selectedRating);
-        currentCard.querySelector('.status').textContent = statusSelect.value;
-
-        submitBtn.textContent = 'Add Book';
+        // Edit Mode
+        books = books.map(book => 
+          book.id === editBookId 
+          ? { ...book, title, genre, rating, status } 
+          : book
+        );
         editMode = false;
-        currentCard = null;
-        await saveBooks();
+        editBookId = null;
+        submitBtn.textContent = 'Add Book';
       } else {
-        // Add new book
+        // Add New Book
         const newBook = {
           id: Date.now().toString(),
-          title: title,
-          genre: genreSelect.value,
-          rating: selectedRating,
-          status: statusSelect.value
+          title,
+          genre,
+          rating,
+          status
         };
         books.push(newBook);
-        renderBookCard(newBook);
-        await saveBooks();
       }
 
+      // Update UI & JSONBin
+      bookList.innerHTML = '';
+      books.forEach(book => addBookCard(book));
+      saveBooksToJSONBin();
+
+      // Reset Form
       bookForm.reset();
-      selectedRating = 0;
-      updateStarDisplay(selectedRating);
     });
 
-    // Edit/Delete Buttons
-    bookList.addEventListener('click', async (e) => {
-      const card = e.target.closest('.card');
-      const id = card.dataset.id;
+    // Edit Book
+    window.editBook = (id) => {
+      const book = books.find(b => b.id === id);
+      document.getElementById('title').value = book.title;
+      document.getElementById('genre').value = book.genre;
+      document.getElementById('rating').value = book.rating;
+      document.getElementById('status').value = book.status;
+      editMode = true;
+      editBookId = id;
+      submitBtn.textContent = 'Update Book';
+    };
 
-      if (e.target.classList.contains('delete-btn')) {
-        books = books.filter(b => b.id !== id);
-        card.remove();
-        await saveBooks();
-      }
-
-      if (e.target.classList.contains('edit-btn')) {
-        const book = books.find(b => b.id === id);
-        document.getElementById('bookTitle').value = book.title;
-        genreSelect.value = book.genre;
-        statusSelect.value = book.status;
-        selectedRating = book.rating;
-        updateStarDisplay(selectedRating);
-        submitBtn.textContent = 'Update Book';
-        editMode = true;
-        currentCard = card;
-      }
-    });
-
-    // Load on page load
-    window.addEventListener('DOMContentLoaded', loadBooks);
+    // Delete Book
+    window.deleteBook = (id) => {
+      books = books.filter(book => book.id !== id);
+      bookList.innerHTML = '';
+      books.forEach(book => addBookCard(book));
+      saveBooksToJSONBin();
+    };
   </script>
+
 </body>
 </html>
